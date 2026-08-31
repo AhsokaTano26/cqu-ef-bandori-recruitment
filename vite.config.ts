@@ -8,7 +8,6 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const workerConfig = {
   main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat"],
 };
 
 export default defineConfig(() => {
