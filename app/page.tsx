@@ -260,7 +260,7 @@ export default function Home() {
           <p className="join-note"><QrCode aria-hidden="true" size={14} /> 点击“加入 QQ 群”可直接跳转；也可以复制群号后在 QQ 中搜索加入。</p>
         </div>
       </section>
-      <footer className="wrap">EF BANGDREAM · CQU　　重庆大学 EF 邦多利马群</footer>
+      <footer className="wrap">EF BANGDREAM · CQU · 重庆大学 EF 邦多利马群</footer>
     </main>
   );
 }
