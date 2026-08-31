@@ -25,6 +25,7 @@ import {
   UsersRound,
   Video,
   WalletCards,
+  X,
   type LucideIcon,
 } from "lucide-react";
 
@@ -108,6 +109,8 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [introLeaving, setIntroLeaving] = useState(false);
   const [introDone, setIntroDone] = useState(false);
+  const [activePhoto, setActivePhoto] = useState<{ src: string; alt: string } | null>(null);
+  const [photoClosing, setPhotoClosing] = useState(false);
 
   const dismissIntro = () => {
     setIntroLeaving(true);
@@ -123,6 +126,31 @@ export default function Home() {
       window.clearTimeout(doneTimer);
     };
   }, []);
+
+  useEffect(() => {
+    if (!activePhoto) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !photoClosing) {
+        setPhotoClosing(true);
+        window.setTimeout(() => {
+          setActivePhoto(null);
+          setPhotoClosing(false);
+        }, 180);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [activePhoto, photoClosing]);
+
+  const closePhoto = () => {
+    if (photoClosing) return;
+    setPhotoClosing(true);
+    window.setTimeout(() => {
+      setActivePhoto(null);
+      setPhotoClosing(false);
+    }, 180);
+  };
 
   const copyGroup = async () => {
     await navigator.clipboard?.writeText("824993838");
@@ -221,7 +249,8 @@ export default function Home() {
               <div className="photo-grid">
                 {photos.map((photo, index) => {
                   const src = `/gallery/photo-${String(photo).padStart(2, "0")}.jpg`;
-                  return <figure className={index === 0 ? "is-featured" : ""} key={src}><img src={src} alt={`${title} · 重庆大学 EF 邦多利同好会影像 ${photo}`} loading="lazy" /></figure>;
+                  const alt = `${title} · 重庆大学 EF 邦多利同好会影像 ${photo}`;
+                  return <figure className={index === 0 ? "is-featured" : ""} key={src}><button type="button" onClick={() => { setPhotoClosing(false); setActivePhoto({ src, alt }); }} aria-label={`查看大图：${alt}`}><img src={src} alt={alt} loading="lazy" /></button></figure>;
                 })}
               </div>
             </section>)}
@@ -261,6 +290,13 @@ export default function Home() {
         </div>
       </section>
       <footer className="wrap">EF BANGDREAM · CQU · 重庆大学 EF 邦多利马群</footer>
+      {activePhoto && <div className={`photo-lightbox ${photoClosing ? "is-closing" : ""}`} role="dialog" aria-modal="true" aria-label="图片大图预览">
+        <button className="photo-lightbox-backdrop" type="button" onClick={closePhoto} aria-label="关闭大图预览" />
+        <div className="photo-lightbox-content">
+          <button className="photo-lightbox-close" type="button" onClick={closePhoto} aria-label="关闭大图预览"><X aria-hidden="true" size={22} /></button>
+          <img src={activePhoto.src} alt={activePhoto.alt} />
+        </div>
+      </div>}
     </main>
   );
 }
