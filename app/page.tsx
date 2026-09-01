@@ -119,8 +119,11 @@ export default function Home() {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const leaveTimer = window.setTimeout(() => setIntroLeaving(true), reducedMotion ? 80 : 1900);
-    const doneTimer = window.setTimeout(() => setIntroDone(true), reducedMotion ? 180 : 2460);
+    const isMobile = window.matchMedia("(max-width: 720px)").matches;
+    const leaveDelay = isMobile ? (reducedMotion ? 1200 : 2600) : reducedMotion ? 80 : 1900;
+    const doneDelay = isMobile ? (reducedMotion ? 1300 : 3200) : reducedMotion ? 180 : 2460;
+    const leaveTimer = window.setTimeout(() => setIntroLeaving(true), leaveDelay);
+    const doneTimer = window.setTimeout(() => setIntroDone(true), doneDelay);
     return () => {
       window.clearTimeout(leaveTimer);
       window.clearTimeout(doneTimer);
