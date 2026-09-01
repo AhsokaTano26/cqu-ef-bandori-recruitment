@@ -93,7 +93,7 @@ const galleryGroups: GalleryGroup[] = [
     text: "一起摆摊、合影、带旗出发；同好会的合奏，永远有人在场。",
     icon: UsersRound,
     tone: "crew",
-    photos: [28, 29, 30],
+    photos: [28, 29, 30, 7],
   },
   {
     title: "其他图片",
@@ -101,7 +101,7 @@ const galleryGroups: GalleryGroup[] = [
     text: "声优、手绘、周边与日常碎片——每一张都是邦邦人的支线故事。",
     icon: GalleryHorizontal,
     tone: "other",
-    photos: [4, 5, 6, 7, 8, 14, 15, 16, 17, 18, 19, 21, 22, 39, 40, 41, 42, 43, 44, 45],
+    photos: [4, 5, 6, 8, 14, 15, 16, 17, 18, 19, 21, 22, 39, 40, 41, 42, 43, 44, 45],
   },
 ];
 
