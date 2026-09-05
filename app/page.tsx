@@ -169,7 +169,7 @@ export default function Home() {
         <div className="intro-spark intro-spark-two" />
         <p className="intro-live" aria-hidden="true">LIVE START</p>
         <div className="intro-lockup">
-          <img src="/ef-bandori-logo.png" alt="重庆大学 EF 邦多利同好会徽标" />
+          <img src="/ef-bandori-logo.png" alt="重庆大学 EF 邦多利同好会徽标" fetchPriority="high" />
           <span className="intro-divider" aria-hidden="true" />
           <div className="intro-copy"><p>重庆大学EF邦多利马群</p><small>CHONGQING UNIVERSITY EF BANDORI FAN CLUB</small></div>
         </div>
