@@ -13,7 +13,9 @@
 - **commit 格式：单行消息，禁止任何 Claude 署名**（无 `Co-Authored-By`、无 `🤖 Generated with`）。每个任务最后一步提交都遵守。
 - **不新增运行时依赖**。不引入 GSAP / framer-motion / 任何动画库。
 - **不新增自动化测试**。用户明确要求"不需要过多测试，仅保证效果没问题即可"。每个任务的验证 = `npm run build` 通过 + 浏览器肉眼确认。现有 `tests/rendered-html.test.mjs` 保持原样不动。
-- **立绘路径**：`/bandori/characters/{乐队slug}/{角色slug}_s3_1.webp`。已实测 60/60 全部存在此文件，无降级分支。
+- **立绘路径**：`/bandori/characters/{乐队slug}/{角色slug}_{后缀}.webp`。后缀按乐队区分：
+  旧官网 8 队为 `s3_1`，新官网 4 队（avemujica / yumemita / millsage / ikka-dumb-rock）为 `1`。
+  已实测 60/60 全部存在对应文件，无降级分支。后缀由 `Band.artSuffix` 承载，缺省 `s3_1`。
 - **logo 路径**：`/bandori/logos/{乐队slug}.webp`。
 - **设计令牌**沿用 `app/globals.css` 的 `:root`：`--ink:#20232b` `--p:#6250b6` `--y:#f9d95a` `--o:#ff855f` `--cream:#fffdf8`。
 - **必须支持** `prefers-reduced-motion: reduce`（`globals.css` 已有全局兜底规则，但舞台需自行处理"不播放、直接静态展示"）。
@@ -32,7 +34,7 @@
 - Consumes: 无
 - Produces:
   - `type Character = { slug: string; name: string; color?: string; stage?: string }`
-  - `type Band = { slug: string; name: string; nameJp: string; accent: string; characters: Character[] }`
+  - `type Band = { slug: string; name: string; nameJp: string; accent: string; artSuffix?: string; characters: Character[] }`
   - `const BANDS: Band[]` — 12 项，顺序固定
   - `function artUrl(band: Band, character: Character): string`
   - `function logoUrl(band: Band): string`
@@ -219,29 +221,31 @@ console.log('bands parsed:', bands.length);
 ```bash
 node --input-type=module -e "
 import fs from 'fs';
-const src = fs.readFileSync('app/bandori-roster.ts','utf8');
-// 每个 characters 块归属其上方最近的 band slug
-const lines = src.split('\n');
-let band = null, missing = [], total = 0;
+const lines = fs.readFileSync('app/bandori-roster.ts','utf8').split('\n');
+let band = null, suffix = 's3_1', missing = [], total = 0, bands = 0;
+const perBand = {};
 for (const line of lines) {
-  const b = line.match(/^\s{4}slug: \"([a-z0-9-]+)\", name: /);
-  if (b) { band = b[1]; continue; }
-  const c = line.match(/^\s+\{ slug: \"([a-z0-9-]+)\", name: /);
+  const withSuffix = line.match(/^    slug: \"([a-z0-9-]+)\", name: .*artSuffix: \"([^\"]+)\"/);
+  const plain      = line.match(/^    slug: \"([a-z0-9-]+)\", name: .*accent: \"[^\"]+\",\$/);
+  if (withSuffix) { band = withSuffix[1]; suffix = withSuffix[2]; bands++; perBand[band] = 0; continue; }
+  if (plain)      { band = plain[1]; suffix = 's3_1'; bands++; perBand[band] = 0; continue; }
+  const c = line.match(/^      \{ slug: \"([a-z0-9-]+)\", name: /);
   if (c && band) {
-    total++;
-    const p = 'public/bandori/characters/' + band + '/' + c[1] + '_s3_1.webp';
+    total++; perBand[band]++;
+    const p = 'public/bandori/characters/' + band + '/' + c[1] + '_' + suffix + '.webp';
     if (!fs.existsSync(p)) missing.push(p);
   }
 }
-console.log('checked', total, 'characters; missing:', missing.length);
+console.log('bands parsed:', bands, '| characters checked:', total, '| missing artwork:', missing.length);
 missing.forEach(m => console.log('  MISSING', m));
-const logos = ['poppinparty','afterglow','hello-happy-world','pastel-palettes','roselia','morfonica','raise-a-suilen','mygo','avemujica','yumemita','millsage','ikka-dumb-rock'];
-const lmissing = logos.filter(l => !fs.existsSync('public/bandori/logos/' + l + '.webp'));
-console.log('logos missing:', lmissing.length, lmissing);
+Object.keys(perBand).forEach(b => {
+  if (!fs.existsSync('public/bandori/logos/' + b + '.webp')) console.log('  MISSING LOGO', b);
+  if (perBand[b] !== 5) console.log('  BAD COUNT', b, perBand[b]);
+});
 "
 ```
 
-Expected: `checked 60 characters; missing: 0` 且 `logos missing: 0 []`
+Expected: `bands parsed: 12 | characters checked: 60 | missing artwork: 0`，且无 `MISSING` / `BAD COUNT` 行。
 
 - [ ] **Step 3: 提交**
 
