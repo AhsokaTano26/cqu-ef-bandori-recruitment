@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BANDS } from "@/app/bandori-roster";
+import { BANDS, logoUrl } from "@/app/bandori-roster";
 import { choreography } from "./band-choreography";
+import { createLogoParticles } from "./logo-particles";
 
 /** A single clock keeps cuts, pause, speed and replay in sync without frame renders. */
 export function useShowPlayer() {
   const stageRef = useRef<HTMLElement>(null);
   const elapsed = useRef(0);
+  const particles = useRef<ReturnType<typeof createLogoParticles>>(null);
   const [bandIndex, setBandIndex] = useState(0);
   const [revision, setRevision] = useState(0);
   const [seekVersion, setSeekVersion] = useState(0);
@@ -17,10 +19,17 @@ export function useShowPlayer() {
   const playingRef = useRef(playing);
   const goTo = useCallback((index: number) => {
     const target = ((index % BANDS.length) + BANDS.length) % BANDS.length;
-    elapsed.current = playingRef.current ? 0 : (choreography(BANDS[target].slug).membersAt + 2.3) * 1000;
+    elapsed.current = playingRef.current ? 0 : (choreography(BANDS[target].slug).membersAt + 5.2) * 1000;
     setBandIndex(target);
     setRevision((value) => value + 1);
   }, []);
+
+  useEffect(() => {
+    const canvas = stageRef.current?.querySelector<HTMLCanvasElement>(".logo-particle-canvas");
+    if (!canvas || reduced) return;
+    particles.current = createLogoParticles(canvas, logoUrl(BANDS[bandIndex]), choreography(BANDS[bandIndex].slug).style);
+    return () => { particles.current?.dispose(); particles.current = null; };
+  }, [bandIndex, revision, reduced]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -34,7 +43,7 @@ export function useShowPlayer() {
     const stage = stageRef.current;
     if (!stage) return;
     const membersAt = choreography(BANDS[bandIndex].slug).membersAt * 1000;
-    const duration = membersAt + 8600;
+    const duration = membersAt + 11200;
     const animations = stage.querySelector(".show-scene")?.getAnimations({ subtree: true }) ?? [];
     const scrubber = stage.querySelector<HTMLInputElement>(".show-scrubber");
     animations.forEach((animation) => animation.pause());
@@ -42,6 +51,8 @@ export function useShowPlayer() {
       animations.forEach((animation) => { animation.currentTime = elapsed.current; });
       stage.style.setProperty("--progress", `${elapsed.current / duration}`);
       stage.dataset.act = elapsed.current < membersAt ? "intro" : elapsed.current >= duration - 850 ? "outro" : "portraits";
+      stage.dataset.shot = elapsed.current < membersAt ? "logo" : elapsed.current < membersAt + 2600 ? "closeup" : "ensemble";
+      particles.current?.draw(elapsed.current / 1000 - choreography(BANDS[bandIndex].slug).dissolveAt);
       if (scrubber) scrubber.value = String(elapsed.current / 1000);
     };
     paint();
@@ -59,7 +70,7 @@ export function useShowPlayer() {
     return () => cancelAnimationFrame(frame);
   }, [bandIndex, revision, seekVersion, playing, speed, reduced, goTo]);
 
-  const duration = choreography(BANDS[bandIndex].slug).membersAt + 8.6;
+  const duration = choreography(BANDS[bandIndex].slug).membersAt + 11.2;
   const seek = useCallback((seconds: number) => {
     if (!Number.isFinite(seconds)) return;
     elapsed.current = Math.max(0, Math.min(seconds, duration - .01)) * 1000;

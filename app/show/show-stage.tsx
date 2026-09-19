@@ -8,9 +8,11 @@ import { useArtPreload } from "./use-art-preload";
 import { useShowPlayer } from "./use-show-player";
 import { LogoReveal } from "./logo-reveal";
 import { choreography } from "./band-choreography";
+import { CinematicSequence } from "./cinematic-sequence";
 import "./stage.css";
 import "./logo-reveal.css";
 import "./band-effects.css";
+import "./cinematic.css";
 
 const DIRECTIONS = ["burst", "slash", "burst", "float", "noir", "float", "slash", "drift", "noir", "burst", "drift", "slash"];
 // Original chapter captions, not official band taglines.
@@ -31,7 +33,7 @@ export default function ShowStage() {
   return (
     <main className="show-page" ref={stageRef} data-direction={DIRECTIONS[bandIndex]} data-playing={playing} data-reduced={reduced}
       data-reveal={direction.style}
-      style={{ "--accent": band.accent, "--dissolve-at": `${direction.dissolveAt}s`, "--members-at": `${direction.membersAt}s`, "--outro-at": `${direction.membersAt + 7.75}s` } as CSSProperties}>
+      style={{ "--accent": band.accent, "--dissolve-at": `${direction.dissolveAt}s`, "--members-at": `${direction.membersAt}s`, "--cast-at": `${direction.membersAt + 2.6}s`, "--outro-at": `${direction.membersAt + 10.35}s` } as CSSProperties}>
       <header className="show-header">
         <Link href="/" className="show-brand" aria-label="返回 EF 邦多利主页">EF<span> × </span>BanG Dream!</Link>
         <span className="show-edition">THE BAND CHRONICLES <span>／</span> 12 BANDS. ONE UNIVERSE.</span>
@@ -58,6 +60,8 @@ export default function ShowStage() {
           <img className="scene-logo" src={logoUrl(band)} alt={`${band.name} 标志`} />
           <div className="scene-stamp" aria-hidden="true">音を鳴らせ。<span>MAKE SOME NOISE!</span></div>
           <LogoReveal src={logoUrl(band)} name={band.name} slug={band.slug} />
+          <canvas className="logo-particle-canvas" aria-hidden="true" />
+          <CinematicSequence band={band} />
           <div className="chapter-wipe" aria-hidden="true" />
         </div>
         <div className="scene-bottomline"><span>重庆大学 EF 邦多利马群</span><span>YOUR NEXT FAVORITE BAND IS HERE ↗</span></div>
@@ -67,7 +71,7 @@ export default function ShowStage() {
           <div className="show-now"><span className="status-dot" /><span>{reduced ? "静态观赏" : playing ? "ON AIR" : "PAUSED"}</span><b>{String(bandIndex + 1).padStart(2, "0")}<span> / {BANDS.length}</span></b></div>
           <div className="transport-buttons"><button type="button" className="show-btn" onClick={prev} aria-label="上一支乐队"><ChevronLeft size={20} /></button><button type="button" className="show-btn play-btn" onClick={toggle} aria-label={playing ? "暂停演出" : "播放演出"} disabled={reduced}>{playing && !reduced ? <Pause size={18} /> : <Play size={18} />}</button><button type="button" className="show-btn" onClick={next} aria-label="下一支乐队"><ChevronRight size={20} /></button><button type="button" className="show-btn replay-btn" onClick={replay} aria-label="重播当前乐队" disabled={reduced}><RotateCcw size={16} /></button></div>
           <div className="show-speeds" aria-label="播放速度">{[.5, 1, 2].map((value) => <button type="button" key={value} onClick={() => setSpeed(value)} aria-pressed={speed === value} disabled={reduced}>{value}×</button>)}</div>
-          <div className="show-cue-points" aria-label="动画关键帧"><button type="button" disabled={reduced} onClick={() => seek(direction.dissolveAt - .35)}>Logo</button><button type="button" disabled={reduced} onClick={() => seek(direction.dissolveAt + .65)}>消散</button><button type="button" disabled={reduced} onClick={() => seek(direction.membersAt + 2.3)}>成员</button></div>
+          <div className="show-cue-points" aria-label="动画关键帧"><button type="button" disabled={reduced} onClick={() => seek(direction.dissolveAt - .35)}>Logo</button><button type="button" disabled={reduced} onClick={() => seek(direction.dissolveAt + .85)}>消散</button><button type="button" disabled={reduced} onClick={() => seek(direction.membersAt + .9)}>特写</button><button type="button" disabled={reduced} onClick={() => seek(direction.membersAt + 5.2)}>成员</button></div>
           <span className="show-keyboard">← → 切换 <span>／</span> SPACE 暂停</span>
         </div>
         <div className="show-progress"><span aria-hidden="true" /><input className="show-scrubber" type="range" min="0" max={duration} step="0.01" defaultValue="0" aria-label="演出进度（秒），拖动定格动画" onChange={(event) => seek(Number(event.target.value))} disabled={reduced} /></div>
