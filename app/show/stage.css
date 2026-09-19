@@ -240,3 +240,61 @@
 }
 
 .show-back { margin-left: 4px; }
+
+/* ---------- 移动端：横排超宽，横向卷动画卷 ---------- */
+@media (max-width: 720px) {
+  .stage {
+    padding: 20px 0 150px;
+    justify-content: flex-start;
+  }
+
+  .lineup {
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0 16px 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .lineup::-webkit-scrollbar { display: none; }
+
+  .tile {
+    flex: 0 0 40vw;      /* 每屏约 2.5 人 */
+    width: 40vw;
+    scroll-snap-align: center;
+  }
+
+  .stage-logo { width: 150px; }
+
+  .stage-band-name { font-size: 18px; }
+
+  .show-controls { padding: 10px 14px; gap: 8px; }
+  .show-band-picker {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .show-back { margin-left: auto; }
+}
+
+/* ---------- 静态降级：不播放动画，直接展示阵容 ---------- */
+/* 必须覆盖所有 data-phase：reduced-motion 下 hook 会停在 "hold"，
+   而 data-phase 是内联属性，仅靠同一选择器无法压过它。 */
+@media (prefers-reduced-motion: reduce) {
+  [data-phase] .stage-logo,
+  [data-phase] .tile,
+  [data-phase] .tile-art,
+  [data-phase] .tile-plaque,
+  [data-phase] .stage-band-name {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    animation: none !important;
+  }
+}
