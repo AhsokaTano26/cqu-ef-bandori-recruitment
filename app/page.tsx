@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   AudioLines,
@@ -18,6 +19,7 @@ import {
   MonitorPlay,
   Palette,
   PencilRuler,
+  Play,
   QrCode,
   Sparkles,
   TicketCheck,
@@ -191,7 +193,10 @@ export default function Home() {
           <p className="tag">CHONGQING UNIVERSITY · 2026 RECRUITING</p>
           <h1>把热爱，<br /><em>带到同一条</em>世界线。</h1>
           <p>重庆大学 EF 邦多利同好会，面向每一位喜欢交流、愿意分享的同学。<br />在校园里，遇见频率相同的伙伴。</p>
-          <a className="cta" href="#join">申请进群 <ArrowRight aria-hidden="true" size={18} /></a>
+          <div className="hero-actions">
+            <Link className="cta cta-show" href="/show"><Play aria-hidden="true" size={17} /> 观看乐队登场</Link>
+            <a className="cta" href="#join">申请进群 <ArrowRight aria-hidden="true" size={18} /></a>
+          </div>
           <small className="hero-note"><Sparkles aria-hidden="true" size={14} /> 新学期纳新进行中 · 欢迎每一位新同学</small>
         </div>
         <strong className="round">BANDORI<br /><i>× EF</i></strong>

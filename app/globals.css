@@ -52,6 +52,9 @@ h1,h2 { margin:15px 0; font-weight:900; letter-spacing:-.08em; line-height:.98; 
 .navbtn,.cta,.join-qq,.group-actions button,.hero-note,.play-list article>b,.event-card b,.cards article>b,.join-note { display:inline-flex; align-items:center; gap:7px; }
 .cta { align-items:center; }
 .hero-note { align-items:center; color:#514e58; }
+.hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0; }
+.hero-actions .cta { margin:0; }
+.cta-show { background:var(--ink); box-shadow:5px 5px var(--y); }
 .crew-grid .icon-chip { display:grid; width:48px; height:48px; place-items:center; border-radius:14px; background:var(--p); color:#fff; }
 .crew-grid article:nth-child(2n) .icon-chip { background:var(--o); }.crew-grid article:nth-child(3n) .icon-chip { background:#d3a900; }
 .play-list article>b,.cards article>b { align-items:center; color:var(--p); }
