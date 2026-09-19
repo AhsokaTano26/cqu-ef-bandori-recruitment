@@ -1,0 +1,242 @@
+/* 乐队登场秀舞台。配色沿用 globals.css 的 :root 令牌。 */
+
+.show-page {
+  min-height: 100vh;
+  background: #111426;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* ---------- 舞台 ---------- */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 0 132px;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* 舞台灯光：随乐队主题色变化 */
+.stage::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 48% at 50% 30%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
+    linear-gradient(180deg, #15172a 0%, #1b1740 55%, #111426 100%);
+  content: "";
+  transition: background 0.5s ease;
+}
+
+/* 地面反光 */
+.stage::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 34%;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 22%, transparent));
+  content: "";
+  pointer-events: none;
+}
+
+.stage-logo {
+  position: relative;
+  z-index: 1;
+  width: clamp(160px, 22vw, 300px);
+  height: auto;
+  object-fit: contain;
+  opacity: 0;
+  filter: blur(14px);
+  transform: scale(0.86);
+}
+
+[data-phase="enter"] .stage-logo,
+[data-phase="names"] .stage-logo,
+[data-phase="hold"] .stage-logo {
+  animation: stage-logo-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes stage-logo-in {
+  to { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+
+/* ---------- 五人横排 ---------- */
+.lineup {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(6px, 1.4vw, 22px);
+  width: 100%;
+  margin-top: clamp(14px, 2.4vh, 34px);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: clamp(96px, 15vw, 190px);
+  opacity: 0;
+  transform: translateY(110%);
+}
+
+[data-phase="enter"] .tile,
+[data-phase="names"] .tile,
+[data-phase="hold"] .tile {
+  animation: tile-rise 0.78s cubic-bezier(0.18, 0.86, 0.22, 1) forwards;
+  /* 中心先起、向两侧扩散：--spread = |i - 2| */
+  animation-delay: calc((0.02 + var(--spread) * 0.075) * 1s);
+}
+
+@keyframes tile-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 定格时的呼吸感 */
+[data-phase="hold"] .tile-art {
+  animation: tile-breathe 2.1s ease-in-out infinite;
+}
+
+@keyframes tile-breathe {
+  50% { transform: scale(1.022); }
+}
+
+.tile-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 12px 22px #0006);
+}
+
+/* ---------- 名条 ---------- */
+.tile-plaque {
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 6px 8px;
+  border: 2px solid var(--plaque);
+  border-radius: 12px;
+  background: #0d0f1ecc;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+[data-phase="names"] .tile-plaque,
+[data-phase="hold"] .tile-plaque {
+  animation: plaque-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc((0.02 + var(--spread) * 0.075) * 1s);
+}
+
+@keyframes plaque-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tile-name {
+  display: block;
+  font-size: clamp(11px, 1.05vw, 15px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.tile-stage {
+  display: block;
+  margin-top: 3px;
+  color: color-mix(in srgb, var(--plaque) 78%, #fff);
+  font-size: clamp(8px, 0.72vw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- 底部乐队名 ---------- */
+.stage-band-name {
+  position: relative;
+  z-index: 1;
+  margin: clamp(16px, 2.6vh, 30px) 0 0;
+  font-size: clamp(15px, 1.5vw, 21px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  opacity: 0;
+}
+
+[data-phase="names"] .stage-band-name,
+[data-phase="hold"] .stage-band-name {
+  animation: plaque-in 0.45s ease 0.5s forwards;
+}
+
+/* ---------- 退场 ---------- */
+[data-phase="exit"] .stage-logo,
+[data-phase="exit"] .lineup,
+[data-phase="exit"] .stage-band-name {
+  animation: stage-out 0.9s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes stage-out {
+  to { opacity: 0; transform: translateY(-4%); }
+}
+
+/* ---------- 控制条 ---------- */
+.show-controls {
+  position: fixed;
+  z-index: 5;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  background: #0b0d18e6;
+  border-top: 1px solid #ffffff1a;
+  backdrop-filter: blur(8px);
+}
+
+.show-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 99px;
+  padding: 9px 15px;
+  background: #ffffff1f;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.show-btn:hover { background: #ffffff33; }
+
+.show-band-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.picker-item {
+  border: 1px solid #ffffff2e;
+  border-radius: 99px;
+  padding: 5px 10px;
+  background: transparent;
+  color: #ffffffb3;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.picker-item[aria-current="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: #fff;
+}
+
+.show-back { margin-left: 4px; }
