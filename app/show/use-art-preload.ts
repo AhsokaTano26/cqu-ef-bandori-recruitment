@@ -44,9 +44,9 @@ export function useArtPreload(currentIndex: number): void {
     };
 
     void (async () => {
-      await Promise.all(priority); // 首屏必需
+      await Promise.all(priority.map(load)); // 首屏必需
       if (cancelled) return;
-      await Promise.all(second); // 下一队，保证切队不空白
+      await Promise.all(second.map(load)); // 下一队，保证切队不空白
       if (cancelled) return;
 
       idle(() => {

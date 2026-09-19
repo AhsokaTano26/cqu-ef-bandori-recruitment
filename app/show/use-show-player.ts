@@ -1,93 +1,94 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { BANDS, type Band } from "@/app/bandori-roster";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BANDS } from "@/app/bandori-roster";
+import { choreography } from "./band-choreography";
 
-export type ShowPhase = "idle" | "enter" | "names" | "hold" | "exit";
-
-/** 单个乐队的时间轴（毫秒，未经 speed 缩放）。 */
-const T = {
-  enter: 1800,
-  names: 2400,
-  hold: 4500,
-  exit: 5400,
-  end: 6800,
-} as const;
-
-export type ShowPlayer = {
-  band: Band;
-  bandIndex: number;
-  phase: ShowPhase;
-  playing: boolean;
-  speed: number;
-  toggle: () => void;
-  next: () => void;
-  prev: () => void;
-  goTo: (index: number) => void;
-  setSpeed: (speed: number) => void;
-};
-
-/** 系统是否要求减弱动效。SSR 阶段返回 false。 */
-function prefersReduced(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * 一队的起始相位。
- * 减弱动效时直接给 "hold" —— 这是唯一能让立绘与名条立刻可见的相位，
- * 若从 "idle" 起步，跳过动画就等于什么都看不见。
- */
-function initialPhase(): ShowPhase {
-  return prefersReduced() ? "hold" : "idle";
-}
-
-export function useShowPlayer(): ShowPlayer {
+/** A single clock keeps cuts, pause, speed and replay in sync without frame renders. */
+export function useShowPlayer() {
+  const stageRef = useRef<HTMLElement>(null);
+  const elapsed = useRef(0);
   const [bandIndex, setBandIndex] = useState(0);
+  const [revision, setRevision] = useState(0);
+  const [seekVersion, setSeekVersion] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
-  const [phase, setPhase] = useState<ShowPhase>(initialPhase);
-
-  // 换队必须同时重置相位，否则新一队会带着上一队的相位直接显现
-  const goto = useCallback((index: number) => {
-    setBandIndex(((index % BANDS.length) + BANDS.length) % BANDS.length);
-    setPhase(initialPhase());
+  const [reduced, setReduced] = useState(false);
+  const playingRef = useRef(playing);
+  const goTo = useCallback((index: number) => {
+    const target = ((index % BANDS.length) + BANDS.length) % BANDS.length;
+    elapsed.current = playingRef.current ? 0 : (choreography(BANDS[target].slug).membersAt + 2.3) * 1000;
+    setBandIndex(target);
+    setRevision((value) => value + 1);
   }, []);
 
   useEffect(() => {
-    if (prefersReduced() || !playing) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
-    const timers: number[] = [];
-    const at = (ms: number, fn: () => void) => {
-      timers.push(window.setTimeout(fn, ms / speed));
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const membersAt = choreography(BANDS[bandIndex].slug).membersAt * 1000;
+    const duration = membersAt + 8600;
+    const animations = stage.querySelector(".show-scene")?.getAnimations({ subtree: true }) ?? [];
+    const scrubber = stage.querySelector<HTMLInputElement>(".show-scrubber");
+    animations.forEach((animation) => animation.pause());
+    const paint = () => {
+      animations.forEach((animation) => { animation.currentTime = elapsed.current; });
+      stage.style.setProperty("--progress", `${elapsed.current / duration}`);
+      stage.dataset.act = elapsed.current < membersAt ? "intro" : elapsed.current >= duration - 850 ? "outro" : "portraits";
+      if (scrubber) scrubber.value = String(elapsed.current / 1000);
     };
+    paint();
+    if (!playing || reduced) return;
+    let frame = 0;
+    let previous = performance.now();
+    const tick = (now: number) => {
+      if (playing && !reduced && !document.hidden) elapsed.current += Math.min(now - previous, 80) * speed;
+      previous = now;
+      if (elapsed.current >= duration) { goTo(bandIndex + 1); return; }
+      paint();
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [bandIndex, revision, seekVersion, playing, speed, reduced, goTo]);
 
-    at(T.enter, () => setPhase("names"));
-    at(T.names, () => setPhase("hold"));
-    at(T.hold, () => setPhase("exit"));
-    at(T.end, () => goto(bandIndex + 1));
+  const duration = choreography(BANDS[bandIndex].slug).membersAt + 8.6;
+  const seek = useCallback((seconds: number) => {
+    if (!Number.isFinite(seconds)) return;
+    elapsed.current = Math.max(0, Math.min(seconds, duration - .01)) * 1000;
+    playingRef.current = false;
+    setPlaying(false);
+    setSeekVersion((value) => value + 1);
+  }, [duration]);
 
-    return () => timers.forEach(window.clearTimeout);
-  }, [bandIndex, playing, speed, goto]);
+  const next = useCallback(() => goTo(bandIndex + 1), [goTo, bandIndex]);
+  const prev = useCallback(() => goTo(bandIndex - 1), [goTo, bandIndex]);
+  const replay = useCallback(() => {
+    playingRef.current = true;
+    setPlaying(true);
+    goTo(bandIndex);
+  }, [goTo, bandIndex]);
+  const toggle = useCallback(() => {
+    playingRef.current = !playingRef.current;
+    setPlaying(playingRef.current);
+  }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement).closest("button, a, input, textarea, select") || event.altKey || event.metaKey || event.ctrlKey) return;
+      if (event.code === "Space") { event.preventDefault(); toggle(); }
+      if (event.code === "ArrowRight") { event.preventDefault(); next(); }
+      if (event.code === "ArrowLeft") { event.preventDefault(); prev(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [next, prev, toggle]);
 
-  const next = useCallback(() => goto(bandIndex + 1), [goto, bandIndex]);
-  const prev = useCallback(() => goto(bandIndex - 1), [goto, bandIndex]);
-  const toggle = useCallback(() => setPlaying((p) => !p), []);
-
-  return {
-    band: BANDS[bandIndex],
-    bandIndex,
-    phase,
-    playing,
-    speed,
-    toggle,
-    next,
-    prev,
-    goTo: goto,
-    setSpeed,
-  };
+  return { stageRef, band: BANDS[bandIndex], bandIndex, revision, playing, speed, reduced, toggle, next, prev, replay, goTo, setSpeed, seek, duration };
 }
